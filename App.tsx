@@ -20,30 +20,31 @@ export default function App() {
         return nGeneradors * 0.5;
     };
 
-    useEffect(() => {
-        const startAnimation = () => {
-            // Animation using requestAnimationFrame
-            let lastUpdateTime = Date.now();
-            
-            function playAnimation() {
-                const now = Date.now();
-                const deltaTime = (now - lastUpdateTime) / 1000;
-                lastUpdateTime = now;
-    
-                setScore(prevScore => prevScore + calculatePassiveElectricity() * deltaTime);
-                
-                requestAnimationFrame(playAnimation);
-            }
-            requestAnimationFrame(playAnimation);
-        };
+    let requestID: any;
+    const startAnimation = () => {
+        // Animation using requestAnimationFrame
+        let lastUpdateTime = Date.now();
+        
+        function playAnimation() {
+            const now = Date.now();
+            const deltaTime = (now - lastUpdateTime) / 1000;
+            lastUpdateTime = now;
 
+            setScore(prevScore => prevScore + calculatePassiveElectricity() * deltaTime);
+            
+            requestID = requestAnimationFrame(playAnimation);
+        }
+        requestAnimationFrame(playAnimation);
+    };
+
+    useEffect(() => {
         startAnimation(); // Start the animation when the component mounts
     
         return () => {
-            // Clean up on unmount
-        };  
+            cancelAnimationFrame(requestID); // Clean up on unmount
+        };
     }, [nGeneradors]);
-    
+
 
     const handleSnapPress = useCallback((index: any) => {
         sheetRef.current?.snapToIndex(index);
