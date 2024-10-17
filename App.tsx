@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef, useState, useEffect } from "react";
 import { StyleSheet, Text, View } from 'react-native';
 import BottomSheet, { BottomSheetView, TouchableOpacity } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -7,8 +7,27 @@ export default function App() {
     const sheetRef = useRef<BottomSheet>(null);
     const [isOpen, setIsOpen] = useState(true);
     const [electricitatActual, setScore] = useState(0);
+    const [nRodesDeHamster, setRodesDeHamster] = useState(0);
+    const [nGeneradors, setGeneradors] = useState(0);
 
     const snapPoints = ["90%"];
+
+    const calculateGainPerClick = () => {
+        return 1 + 0.1 * nRodesDeHamster;
+    }
+
+    const calculatePassiveElectricity = () => {
+        return nGeneradors * 0.5;
+    };
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setScore(prevScore => prevScore + calculatePassiveElectricity());
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [nGeneradors]);
+
 
     const handleSnapPress = useCallback((index: any) => {
         sheetRef.current?.snapToIndex(index);
@@ -19,42 +38,70 @@ export default function App() {
         setScore(prevScore => prevScore + amount);
     };
 
-    const buyItem = (cost: number) => {
-        if (electricitatActual >= cost) {
-            changeScore(-cost)
-            console.log(`Item comprado por ${cost} puntos.`);
-        } else {
-            console.log("No tienes suficientes puntos para comprar este item.");
+    const isItemBuyable = (cost: number) => {
+        return electricitatActual >= cost;
+    };
+
+    const getCostForRodaHamster = () => {
+        return Math.floor(10 * Math.pow(1.15, nRodesDeHamster)); // Exponential cost scaling
+    };
+
+    const buyRodaHamster = () => {
+        const cost = getCostForRodaHamster();
+        if (isItemBuyable(cost)) {
+            changeScore(-cost);
+            setRodesDeHamster(prevRodes => prevRodes + 1);
+        }
+    };
+
+    const getCostForGenerador = () => {
+        return Math.floor(20 * Math.pow(1.2, nGeneradors)); // Exponential cost scaling
+    };
+
+    const buyGeneradorEnergia = () => {
+        const cost = getCostForGenerador();
+        if (isItemBuyable(cost)) {
+            changeScore(-cost);
+            setGeneradors(prevGens => prevGens + 1);
         }
     };
 
     return (
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={styles.container}>
-            <Text style={styles.scoreText}>Electricitat: {electricitatActual}</Text>
+            <Text style={styles.scoreText}>Electricitat: {electricitatActual.toFixed(1)}</Text>
+            <Text style={styles.scoreText}>Electricitat / s: {calculatePassiveElectricity().toFixed(2)}</Text>
+
+            {/* Main Botó */}
+            <TouchableOpacity style={styles.incrementButton} onPress={() => changeScore(calculateGainPerClick())}>
+                <Text style={styles.buttonText}>Incrementar Score</Text>
+            </TouchableOpacity>
 
             {/* Botó obrir desplegable */}
             <TouchableOpacity style={styles.button} onPress={() => handleSnapPress(0)}>
                 <Text style={styles.buttonText}>OBRE DESPLEGABLE</Text>
             </TouchableOpacity>
 
-            {/* Main Botó */}
-            <TouchableOpacity style={styles.incrementButton} onPress={() => changeScore(1)}>
-                <Text style={styles.buttonText}>Incrementar Score</Text>
-            </TouchableOpacity>
-
             {/* Bottom Sheet (zona de compres) */}
             <BottomSheet ref={sheetRef} snapPoints={snapPoints} enablePanDownToClose={true} onClose={() => setIsOpen(false)}>
                 <BottomSheetView style={styles.bottomSheetContent}>
-                <TouchableOpacity style={[styles.purchaseButton, electricitatActual < 10 && styles.disabledButton]} onPress={() => buyItem(10)} disabled={electricitatActual < 10}>
-                    <Text style={styles.buttonText}>Comprar Item 1 (10 puntos)</Text>
+                <TouchableOpacity style={[styles.purchaseButton, electricitatActual < getCostForRodaHamster() && styles.disabledButton]} 
+                                  onPress={() => buyRodaHamster()} 
+                                  disabled={electricitatActual < getCostForRodaHamster()}>
+                    <Text style={styles.buttonText}>Roda de Hamster</Text>
+                    <Text style={styles.infoText}>Cost: {getCostForRodaHamster()}</Text>
+                    <Text style={styles.infoText}>Cantidad: {nRodesDeHamster}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.purchaseButton, electricitatActual < 20 && styles.disabledButton]} onPress={() => buyItem(20)} disabled={electricitatActual < 20}>
-                    <Text style={styles.buttonText}>Comprar Item 2 (20 puntos)</Text>
+                <TouchableOpacity style={[styles.purchaseButton, electricitatActual < getCostForGenerador() && styles.disabledButton]}
+                                  onPress={() => buyGeneradorEnergia()} 
+                                  disabled={electricitatActual < getCostForGenerador()}>
+                    <Text style={styles.buttonText}>Generador d'Energia</Text>
+                    <Text style={styles.infoText}>Cost: {getCostForGenerador()}</Text>
+                    <Text style={styles.infoText}>Cantidad: {nGeneradors}</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={[styles.purchaseButton, electricitatActual < 30 && styles.disabledButton]} onPress={() => buyItem(30)} disabled={electricitatActual < 30}>
+                <TouchableOpacity style={[styles.purchaseButton, electricitatActual < 30 && styles.disabledButton]} disabled={electricitatActual < 30}>
                     <Text style={styles.buttonText}>Comprar Item 3 (30 puntos)</Text>
                 </TouchableOpacity>
                 </BottomSheetView>
@@ -117,6 +164,10 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: '600',
+    },
+    infoText: {
+        color: 'white',
+        fontSize: 16,
     },
     bottomSheetContent: {
         padding: 20,
