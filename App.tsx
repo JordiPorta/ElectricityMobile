@@ -21,13 +21,29 @@ export default function App() {
     };
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            setScore(prevScore => prevScore + calculatePassiveElectricity());
-        }, 1000);
+        const startAnimation = () => {
+            // Animation using requestAnimationFrame
+            let lastUpdateTime = Date.now();
+            
+            function playAnimation() {
+                const now = Date.now();
+                const deltaTime = (now - lastUpdateTime) / 1000;
+                lastUpdateTime = now;
+    
+                setScore(prevScore => prevScore + calculatePassiveElectricity() * deltaTime);
+                
+                requestAnimationFrame(playAnimation);
+            }
+            requestAnimationFrame(playAnimation);
+        };
 
-        return () => clearInterval(interval);
+        startAnimation(); // Start the animation when the component mounts
+    
+        return () => {
+            // Clean up on unmount
+        };  
     }, [nGeneradors]);
-
+    
 
     const handleSnapPress = useCallback((index: any) => {
         sheetRef.current?.snapToIndex(index);
@@ -43,7 +59,7 @@ export default function App() {
     };
 
     const getCostForRodaHamster = () => {
-        return Math.floor(10 * Math.pow(1.15, nRodesDeHamster)); // Exponential cost scaling
+        return Math.floor(15 * Math.pow(1.15, nRodesDeHamster)); // Exponential cost scaling
     };
 
     const buyRodaHamster = () => {
@@ -55,7 +71,7 @@ export default function App() {
     };
 
     const getCostForGenerador = () => {
-        return Math.floor(20 * Math.pow(1.2, nGeneradors)); // Exponential cost scaling
+        return Math.floor(100 * Math.pow(1.2, nGeneradors)); // Exponential cost scaling
     };
 
     const buyGeneradorEnergia = () => {
