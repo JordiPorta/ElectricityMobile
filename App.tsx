@@ -2,6 +2,8 @@ import React, { useCallback, useRef, useState, useEffect } from "react";
 import { StyleSheet, Text, View } from 'react-native';
 import BottomSheet, { BottomSheetView, TouchableOpacity } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Image } from 'react-native';
+
 
 export default function App() {
     const sheetRef = useRef<BottomSheet>(null);
@@ -96,9 +98,11 @@ export default function App() {
 
             {/* Botó obrir desplegable */}
             <TouchableOpacity style={styles.button} onPress={() => handleSnapPress(0)}>
-                <Text style={styles.buttonText}>OBRE DESPLEGABLE</Text>
+                <Image 
+                    source={require('./arrow.png')}  // Ruta de la imagen
+                    style={styles.icon}  // Aplica un estilo para el tamaño del ícono
+                />
             </TouchableOpacity>
-
             {/* Bottom Sheet (zona de compres) */}
             <BottomSheet ref={sheetRef} snapPoints={snapPoints} enablePanDownToClose={true} onClose={() => setIsOpen(false)}>
                 <BottomSheetView style={styles.bottomSheetContent}>
@@ -169,13 +173,15 @@ const styles = StyleSheet.create({
         backgroundColor: '#C0C0C0',
     },
     button: {
-        backgroundColor: '#0080FB',
+        marginTop: 'auto',
+        marginBottom: 20,
+/*         backgroundColor: '#0080FB',
         paddingVertical: 12,
         paddingHorizontal: 24,
         borderRadius: 8,
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 20,
+        marginTop: 20, */
     },
     buttonText: {
         color: 'white',
@@ -194,5 +200,10 @@ const styles = StyleSheet.create({
         fontSize: 18,
         marginBottom: 20,
         color: '#333',
+    },
+    icon: {
+        width: 30,   // Ancho del ícono (ajústalo a tu preferencia)
+        height: 30,  // Altura del ícono (ajústalo a tu preferencia)
+        resizeMode: 'contain'  // Asegura que la imagen se ajuste correctamente dentro del contenedor
     },
 });
