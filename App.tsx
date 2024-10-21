@@ -93,14 +93,17 @@ export default function App() {
 
             {/* Main Botó */}
             <TouchableOpacity style={styles.incrementButton} onPress={() => changeScore(calculateGainPerClick())}>
-                <Text style={styles.buttonText}>Incrementar Score</Text>
+                <Image 
+                    source={require('./electricButton.png')} 
+                    style={styles.clicker} 
+                />
             </TouchableOpacity>
 
             {/* Botó obrir desplegable */}
             <TouchableOpacity style={styles.button} onPress={() => handleSnapPress(0)}>
                 <Image 
-                    source={require('./arrow.png')}  // Ruta de la imagen
-                    style={styles.icon}  // Aplica un estilo para el tamaño del ícono
+                    source={require('./arrow.png')} 
+                    style={styles.icon} 
                 />
             </TouchableOpacity>
             {/* Bottom Sheet (zona de compres) */}
@@ -111,7 +114,7 @@ export default function App() {
                                   disabled={electricitatActual < getCostForRodaHamster()}>
                     <Text style={styles.buttonText}>Roda de Hamster</Text>
                     <Text style={styles.infoText}>Cost: {getCostForRodaHamster()}</Text>
-                    <Text style={styles.infoText}>Cantidad: {nRodesDeHamster}</Text>
+                    <Text style={styles.infoText}>Cantitat: {nRodesDeHamster}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={[styles.purchaseButton, electricitatActual < getCostForGenerador() && styles.disabledButton]}
@@ -119,7 +122,7 @@ export default function App() {
                                   disabled={electricitatActual < getCostForGenerador()}>
                     <Text style={styles.buttonText}>Generador d'Energia</Text>
                     <Text style={styles.infoText}>Cost: {getCostForGenerador()}</Text>
-                    <Text style={styles.infoText}>Cantidad: {nGeneradors}</Text>
+                    <Text style={styles.infoText}>Cantitat: {nGeneradors}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={[styles.purchaseButton, electricitatActual < 30 && styles.disabledButton]} disabled={electricitatActual < 30}>
@@ -137,7 +140,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#F0F0F0',
+        backgroundColor: '#343747',
     },
     title: {
         fontSize: 24,
@@ -148,17 +151,16 @@ const styles = StyleSheet.create({
     scoreText: {
         fontSize: 22,
         fontWeight: 'bold',
-        color: '#333',
+        color: 'white',
         marginBottom: 20,
     },
     incrementButton: {
-        backgroundColor: '#28A745',
-        paddingVertical: 12,
         paddingHorizontal: 24,
-        borderRadius: 8,
+        borderRadius: 5,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 20,
+        marginBottom: 0,
+        width: '80%'
     },
     purchaseButton: {
         backgroundColor: '#FFA500',
@@ -173,15 +175,10 @@ const styles = StyleSheet.create({
         backgroundColor: '#C0C0C0',
     },
     button: {
-        marginTop: 'auto',
-        marginBottom: 20,
-/*         backgroundColor: '#0080FB',
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 20, */
+        bottom: '-300%',  // Fet amb percentatges per ser responsive, s'ha de provar en altres dispositius
+        alignSelf: 'center', 
+        padding: '3%',  
+        borderRadius: 8,  
     },
     buttonText: {
         color: 'white',
@@ -202,8 +199,15 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     icon: {
-        width: 30,   // Ancho del ícono (ajústalo a tu preferencia)
-        height: 30,  // Altura del ícono (ajústalo a tu preferencia)
-        resizeMode: 'contain'  // Asegura que la imagen se ajuste correctamente dentro del contenedor
+        width: '8%',  // Ícono ocupará el 10% del ancho de la pantalla
+        height: undefined, // Para mantener la proporción
+        aspectRatio: 1,    // Mantener la relación de aspecto cuadrada
+        resizeMode: 'contain', // Asegura que la imagen se ajuste correctamente dentro del contenedor
+    },
+    clicker:{
+        width: '100%', 
+        height: undefined,
+        aspectRatio: 1,  // Mantener proporción de la imagen
+        resizeMode: 'contain',
     },
 });
