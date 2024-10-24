@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import BottomSheet, { BottomSheetView, TouchableOpacity } from "@gorhom/bottom-sheet";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Image } from 'react-native';
+import { PurchaseButton } from './PurchaseButton';
 
 
 export default function App() {
@@ -11,6 +12,10 @@ export default function App() {
     const [electricitatActual, setScore] = useState(0);
     const [nRodesDeHamster, setRodesDeHamster] = useState(0);
     const [nGeneradors, setGeneradors] = useState(0);
+    const [nPanellsSolars, setPanells] = useState(0);
+    const [nCentralsNuclears, setCentralsNuclears] = useState(0);
+
+    const baseCosts = {rodaHamster: 15, generador: 100, panellSolar: 500}
 
     const snapPoints = ["90%"];
 
@@ -19,7 +24,7 @@ export default function App() {
     }
 
     const calculatePassiveElectricity = () => {
-        return nGeneradors * 0.5;
+        return nGeneradors * 0.5 + 2 * nPanellsSolars;
     };
 
     let requestID: any;
@@ -61,27 +66,15 @@ export default function App() {
         return electricitatActual >= cost;
     };
 
-    const getCostForRodaHamster = () => {
-        return Math.floor(15 * Math.pow(1.15, nRodesDeHamster)); // Exponential cost scaling
+    const getCostForItem = (baseCost: number, currentAmount: number, scaleFactor: number = 1.15): number => {
+        return Math.floor(baseCost * Math.pow(scaleFactor, currentAmount));
     };
-
-    const buyRodaHamster = () => {
-        const cost = getCostForRodaHamster();
+    
+    const buyItem = (baseCost: number, currentAmount: number, setAmount: React.Dispatch<React.SetStateAction<number>>, scaleFactor: number = 1.15) => {
+        const cost = getCostForItem(baseCost, currentAmount, scaleFactor);
         if (isItemBuyable(cost)) {
             changeScore(-cost);
-            setRodesDeHamster(prevRodes => prevRodes + 1);
-        }
-    };
-
-    const getCostForGenerador = () => {
-        return Math.floor(100 * Math.pow(1.2, nGeneradors)); // Exponential cost scaling
-    };
-
-    const buyGeneradorEnergia = () => {
-        const cost = getCostForGenerador();
-        if (isItemBuyable(cost)) {
-            changeScore(-cost);
-            setGeneradors(prevGens => prevGens + 1);
+            setAmount((prevAmount: number) => prevAmount + 1);
         }
     };
 
@@ -109,25 +102,35 @@ export default function App() {
             {/* Bottom Sheet (zona de compres) */}
             <BottomSheet ref={sheetRef} snapPoints={snapPoints} enablePanDownToClose={true} onClose={() => setIsOpen(false)}>
                 <BottomSheetView style={styles.bottomSheetContent}>
-                <TouchableOpacity style={[styles.purchaseButton, electricitatActual < getCostForRodaHamster() && styles.disabledButton]} 
-                                  onPress={() => buyRodaHamster()} 
-                                  disabled={electricitatActual < getCostForRodaHamster()}>
-                    <Text style={styles.buttonText}>Roda de Hamster</Text>
-                    <Text style={styles.infoText}>Cost: {getCostForRodaHamster()}</Text>
-                    <Text style={styles.infoText}>Cantitat: {nRodesDeHamster}</Text>
-                </TouchableOpacity>
+                    <PurchaseButton
+                        name="Roda de Hamster"
+                        baseCost={baseCosts["rodaHamster"]}
+                        currentAmount={nRodesDeHamster}
+                        setAmount={setRodesDeHamster}
+                        electricitatActual={electricitatActual}
+                        getCostForItem={getCostForItem}
+                        buyItem={buyItem}
+                    />
 
-                <TouchableOpacity style={[styles.purchaseButton, electricitatActual < getCostForGenerador() && styles.disabledButton]}
-                                  onPress={() => buyGeneradorEnergia()} 
-                                  disabled={electricitatActual < getCostForGenerador()}>
-                    <Text style={styles.buttonText}>Generador d'Energia</Text>
-                    <Text style={styles.infoText}>Cost: {getCostForGenerador()}</Text>
-                    <Text style={styles.infoText}>Cantitat: {nGeneradors}</Text>
-                </TouchableOpacity>
+                    <PurchaseButton
+                        name="Generador d'Energia"
+                        baseCost={baseCosts["generador"]}
+                        currentAmount={nGeneradors}
+                        setAmount={setGeneradors}
+                        electricitatActual={electricitatActual}
+                        getCostForItem={getCostForItem}
+                        buyItem={buyItem}
+                    />
 
-                <TouchableOpacity style={[styles.purchaseButton, electricitatActual < 30 && styles.disabledButton]} disabled={electricitatActual < 30}>
-                    <Text style={styles.buttonText}>Comprar Item 3 (30 puntos)</Text>
-                </TouchableOpacity>
+                    <PurchaseButton
+                        name="Panell Solar"
+                        baseCost={baseCosts["panellSolar"]}
+                        currentAmount={nPanellsSolars}
+                        setAmount={setPanells}
+                        electricitatActual={electricitatActual}
+                        getCostForItem={getCostForItem}
+                        buyItem={buyItem}
+                    />
                 </BottomSheetView>
             </BottomSheet>
         </View>
@@ -162,32 +165,11 @@ const styles = StyleSheet.create({
         marginBottom: 0,
         width: '80%'
     },
-    purchaseButton: {
-        backgroundColor: '#FFA500',
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 10,
-    },
-    disabledButton: {
-        backgroundColor: '#C0C0C0',
-    },
     button: {
         bottom: '-300%',  // Fet amb percentatges per ser responsive, s'ha de provar en altres dispositius
         alignSelf: 'center', 
         padding: '3%',  
         borderRadius: 8,  
-    },
-    buttonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    infoText: {
-        color: 'white',
-        fontSize: 16,
     },
     bottomSheetContent: {
         padding: 20,
