@@ -15,12 +15,13 @@ export default function App() {
     const [nPanellsSolars, setPanells] = useState(0);
     const [nCentralsNuclears, setCentralsNuclears] = useState(0);
     const [nAcceleradorsParticules, setAcceleradorsParticules] = useState(0);
-
-    const baseCosts = {rodaHamster: 15, generador: 100, panellSolar: 500, centralNuclear: 1000};
+    const [progress, setProgress] = useState(0);
+    const [showProgress, setShowProgress] = useState(false);
+    const baseCosts = {rodaHamster: 15, generador: 100, panellSolar: 500, centralNuclear: 1000, acceleradorParticules: 2000};
 
     const snapPoints = ["90%"];
 
-    // Carregar les dades guardades a AsyncStorage al iniciar
+    // Carregar les dades (punts i items comprats) guardades a AsyncStorage al iniciar
     useEffect(() => {
         const loadProgress = async () => {
             try {
@@ -32,6 +33,8 @@ export default function App() {
                     setGeneradors(progress.nGeneradors || 0);
                     setPanells(progress.nPanellsSolars || 0);
                     setCentralsNuclears(progress.nCentralsNuclears || 0);
+                    setAcceleradorsParticules(progress.nAcceleradorsParticules || 0);
+                    setShowProgress(progress.showProgress || false);
                 }
             } catch (error) {
                 console.error("Error loading progress from AsyncStorage:", error);
@@ -49,7 +52,9 @@ export default function App() {
                     nRodesDeHamster,
                     nGeneradors,
                     nPanellsSolars,
-                    nCentralsNuclears
+                    nCentralsNuclears,
+                    nAcceleradorsParticules,
+                    showProgress
                 };
                 await AsyncStorage.setItem('@gameProgress', JSON.stringify(progress));
             } catch (error) {
@@ -57,15 +62,39 @@ export default function App() {
             }
         };
         saveProgress();
-    }, [electricitatActual, nRodesDeHamster, nGeneradors, nPanellsSolars, nCentralsNuclears]);
+    }, [electricitatActual, nRodesDeHamster, nGeneradors, nPanellsSolars, nCentralsNuclears, nAcceleradorsParticules, showProgress]);
+
+    // Efecto para iniciar la barra de progreso
+    useEffect(() => {
+        if (nAcceleradorsParticules > 0) {
+            setShowProgress(true); // Muestra la barra al comprar un acelerador
+            setProgress(0); // Reinicia el progreso
+
+            const interval = setInterval(() => {
+                setProgress(prevProgress => {
+                    if (prevProgress >= 1) {
+                        clearInterval(interval);
+                        setShowProgress(false); // Oculta la barra al terminar el tiempo
+                        return 1;
+                    }
+                    return prevProgress + 1 / 30; // Incremento para completar en 30 segundos
+                });
+            }, 1000);
+
+            return () => clearInterval(interval);
+        }
+    }, [nAcceleradorsParticules]);
 
 
+    //calculem el que es genera per click basat en els items comprats
     const calculateGainPerClick = () => {
-        return 1 + 0.1 * nRodesDeHamster + 5 * nCentralsNuclears;
+        const baseGain = 1 + 0.1 * nRodesDeHamster + 5 * nCentralsNuclears;
+        return showProgress ? baseGain * 2 : baseGain;
     };
-
+    //calculem el que es genera automaticament basat en els items
     const calculatePassiveElectricity = () => {
-        return nGeneradors * 0.5 + 2 * nPanellsSolars;
+        const baseElectricity = nGeneradors * 0.5 + 2 * nPanellsSolars;
+        return showProgress ? baseElectricity * 2 : baseElectricity;
     };
 
     let requestID: number;
@@ -123,9 +152,12 @@ export default function App() {
                 <Text style={styles.scoreText}>Electricitat: {electricitatActual.toFixed(1)}</Text>
                 <Text style={styles.scoreText}>Electricitat / s: {calculatePassiveElectricity().toFixed(2)}</Text>
 
-                <Progress.Bar progress={0.3} width={200} height={10} borderColor={'red'} borderWidth={2}/>
+                {/* Mostrem la barra només si hi ha acceleradors de particules */}
+                {showProgress && (
+                   <Progress.Bar style={styles.progressBar} progress={progress} />
+                )}
 
-                {/* Botón principal */}
+                {/* Botó principal */}
                 <TouchableOpacity style={styles.incrementButton} onPress={() => changeScore(calculateGainPerClick())}>
                     <Image 
                         source={require('./electricButton.png')} 
@@ -133,7 +165,7 @@ export default function App() {
                     />
                 </TouchableOpacity>
 
-                {/* Botón para abrir el desplegable */}
+                {/* Botó per obrir el desplegable */}
                 <TouchableOpacity style={styles.button} onPress={() => handleSnapPress(0)}>
                     <Image 
                         source={require('./arrow.png')} 
@@ -141,7 +173,7 @@ export default function App() {
                     />
                 </TouchableOpacity>
 
-                {/* Bottom Sheet para las compras */}
+                {/* Bottom Sheet per comprar */}
                 <BottomSheet ref={sheetRef} snapPoints={snapPoints} enablePanDownToClose={true} onClose={() => setIsOpen(false)}>
                     <BottomSheetView style={styles.bottomSheetContent}>
                         <PurchaseButton
@@ -183,6 +215,17 @@ export default function App() {
                             baseCost={baseCosts["centralNuclear"]}
                             currentAmount={nCentralsNuclears}
                             setAmount={setCentralsNuclears}
+                            electricitatActual={electricitatActual}
+                            getCostForItem={getCostForItem}
+                            buyItem={buyItem}
+                        />
+
+                        <PurchaseButton
+                            name="Accelerador de partícules"
+                            description="Durant 30 segons generes el doble"
+                            baseCost={baseCosts["acceleradorParticules"]}
+                            currentAmount={nAcceleradorsParticules}
+                            setAmount={setAcceleradorsParticules}
                             electricitatActual={electricitatActual}
                             getCostForItem={getCostForItem}
                             buyItem={buyItem}
@@ -247,5 +290,12 @@ const styles = StyleSheet.create({
         height: undefined,
         aspectRatio: 1,  
         resizeMode: 'contain',
+    },
+    progressBar: {
+        width: 200,
+        height: 10,
+        borderColor: 'white',
+        borderWidth: 2,
+        
     },
 });
