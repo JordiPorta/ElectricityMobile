@@ -33,6 +33,8 @@ npm install react-native-reanimated@3.10.1
 npm install typescript@5.6.3
 npm i @gorhom/bottom-sheet
 npm install react-native-gesture-handler@2.16.1
+npm install react-native-progress --save
+npm install @react-native-async-storage/async-storage@1.23.1
 ```
 
 ### 3. Install other dependencies
