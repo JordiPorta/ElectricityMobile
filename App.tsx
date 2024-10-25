@@ -8,7 +8,7 @@ import { PurchaseButton } from './PurchaseButton';
 
 export default function App() {
     const sheetRef = useRef<BottomSheet>(null);
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
     const [electricitatActual, setScore] = useState(0);
     const [nRodesDeHamster, setRodesDeHamster] = useState(0);
     const [nGeneradors, setGeneradors] = useState(0);
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
         width: '80%'
     },
     button: {
-        bottom: '-300%',  // Fet amb percentatges per ser responsive, s'ha de provar en altres dispositius
+        marginTop: 10,  // Fet amb percentatges per ser responsive, s'ha de provar en altres dispositius
         alignSelf: 'center', 
         padding: '3%',  
         borderRadius: 8,  
