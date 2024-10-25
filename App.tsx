@@ -1,9 +1,9 @@
 import React, { useCallback, useRef, useState, useEffect } from "react";
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, Image } from 'react-native';
 import BottomSheet, { BottomSheetView, TouchableOpacity } from "@gorhom/bottom-sheet";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Image } from 'react-native';
+import * as Progress from 'react-native-progress';
 import { PurchaseButton } from './PurchaseButton';
 
 export default function App() {
@@ -14,8 +14,9 @@ export default function App() {
     const [nGeneradors, setGeneradors] = useState(0);
     const [nPanellsSolars, setPanells] = useState(0);
     const [nCentralsNuclears, setCentralsNuclears] = useState(0);
+    const [nAcceleradorsParticules, setAcceleradorsParticules] = useState(0);
 
-    const baseCosts = {rodaHamster: 15, generador: 100, panellSolar: 500, centralNuclear:1000};
+    const baseCosts = {rodaHamster: 15, generador: 100, panellSolar: 500, centralNuclear: 1000};
 
     const snapPoints = ["90%"];
 
@@ -121,6 +122,8 @@ export default function App() {
             <View style={styles.container}>
                 <Text style={styles.scoreText}>Electricitat: {electricitatActual.toFixed(1)}</Text>
                 <Text style={styles.scoreText}>Electricitat / s: {calculatePassiveElectricity().toFixed(2)}</Text>
+
+                <Progress.Bar progress={0.3} width={200} height={10} borderColor={'red'} borderWidth={2}/>
 
                 {/* Botón principal */}
                 <TouchableOpacity style={styles.incrementButton} onPress={() => changeScore(calculateGainPerClick())}>
