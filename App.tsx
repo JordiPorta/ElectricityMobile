@@ -1,10 +1,10 @@
 import React, { useCallback, useRef, useState, useEffect } from "react";
 import { StyleSheet, Text, View } from 'react-native';
 import BottomSheet, { BottomSheetView, TouchableOpacity } from "@gorhom/bottom-sheet";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Image } from 'react-native';
 import { PurchaseButton } from './PurchaseButton';
-
 
 export default function App() {
     const sheetRef = useRef<BottomSheet>(null);
@@ -15,23 +15,62 @@ export default function App() {
     const [nPanellsSolars, setPanells] = useState(0);
     const [nCentralsNuclears, setCentralsNuclears] = useState(0);
 
-    const baseCosts = {rodaHamster: 15, generador: 100, panellSolar: 500}
+    const baseCosts = {rodaHamster: 15, generador: 100, panellSolar: 500, centralNuclear:1000};
 
     const snapPoints = ["90%"];
 
+    // Carregar les dades guardades a AsyncStorage al iniciar
+    useEffect(() => {
+        const loadProgress = async () => {
+            try {
+                const storedProgress = await AsyncStorage.getItem('@gameProgress');
+                if (storedProgress) {
+                    const progress = JSON.parse(storedProgress);
+                    setScore(progress.electricitatActual || 0);
+                    setRodesDeHamster(progress.nRodesDeHamster || 0);
+                    setGeneradors(progress.nGeneradors || 0);
+                    setPanells(progress.nPanellsSolars || 0);
+                    setCentralsNuclears(progress.nCentralsNuclears || 0);
+                }
+            } catch (error) {
+                console.error("Error loading progress from AsyncStorage:", error);
+            }
+        };
+        loadProgress();
+    }, []);
+
+    // Guardar el progres en AsyncStorage per cada canvi relevant
+    useEffect(() => {
+        const saveProgress = async () => {
+            try {
+                const progress = {
+                    electricitatActual,
+                    nRodesDeHamster,
+                    nGeneradors,
+                    nPanellsSolars,
+                    nCentralsNuclears
+                };
+                await AsyncStorage.setItem('@gameProgress', JSON.stringify(progress));
+            } catch (error) {
+                console.error("Error saving progress to AsyncStorage:", error);
+            }
+        };
+        saveProgress();
+    }, [electricitatActual, nRodesDeHamster, nGeneradors, nPanellsSolars, nCentralsNuclears]);
+
+
     const calculateGainPerClick = () => {
-        return 1 + 0.1 * nRodesDeHamster;
-    }
+        return 1 + 0.1 * nRodesDeHamster + 5 * nCentralsNuclears;
+    };
 
     const calculatePassiveElectricity = () => {
         return nGeneradors * 0.5 + 2 * nPanellsSolars;
     };
 
-    let requestID: any;
+    let requestID: number;
     const startAnimation = () => {
-        // Animation using requestAnimationFrame
         let lastUpdateTime = Date.now();
-        
+
         function playAnimation() {
             const now = Date.now();
             const deltaTime = (now - lastUpdateTime) / 1000;
@@ -45,13 +84,12 @@ export default function App() {
     };
 
     useEffect(() => {
-        startAnimation(); // Start the animation when the component mounts
+        startAnimation();
     
         return () => {
-            cancelAnimationFrame(requestID); // Clean up on unmount
+            cancelAnimationFrame(requestID);
         };
     }, [nGeneradors]);
-
 
     const handleSnapPress = useCallback((index: any) => {
         sheetRef.current?.snapToIndex(index);
@@ -79,62 +117,77 @@ export default function App() {
     };
 
     return (
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <View style={styles.container}>
-            <Text style={styles.scoreText}>Electricitat: {electricitatActual.toFixed(1)}</Text>
-            <Text style={styles.scoreText}>Electricitat / s: {calculatePassiveElectricity().toFixed(2)}</Text>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+            <View style={styles.container}>
+                <Text style={styles.scoreText}>Electricitat: {electricitatActual.toFixed(1)}</Text>
+                <Text style={styles.scoreText}>Electricitat / s: {calculatePassiveElectricity().toFixed(2)}</Text>
 
-            {/* Main Botó */}
-            <TouchableOpacity style={styles.incrementButton} onPress={() => changeScore(calculateGainPerClick())}>
-                <Image 
-                    source={require('./electricButton.png')} 
-                    style={styles.clicker} 
-                />
-            </TouchableOpacity>
-
-            {/* Botó obrir desplegable */}
-            <TouchableOpacity style={styles.button} onPress={() => handleSnapPress(0)}>
-                <Image 
-                    source={require('./arrow.png')} 
-                    style={styles.icon} 
-                />
-            </TouchableOpacity>
-            {/* Bottom Sheet (zona de compres) */}
-            <BottomSheet ref={sheetRef} snapPoints={snapPoints} enablePanDownToClose={true} onClose={() => setIsOpen(false)}>
-                <BottomSheetView style={styles.bottomSheetContent}>
-                    <PurchaseButton
-                        name="Roda de Hamster"
-                        baseCost={baseCosts["rodaHamster"]}
-                        currentAmount={nRodesDeHamster}
-                        setAmount={setRodesDeHamster}
-                        electricitatActual={electricitatActual}
-                        getCostForItem={getCostForItem}
-                        buyItem={buyItem}
+                {/* Botón principal */}
+                <TouchableOpacity style={styles.incrementButton} onPress={() => changeScore(calculateGainPerClick())}>
+                    <Image 
+                        source={require('./electricButton.png')} 
+                        style={styles.clicker} 
                     />
+                </TouchableOpacity>
 
-                    <PurchaseButton
-                        name="Generador d'Energia"
-                        baseCost={baseCosts["generador"]}
-                        currentAmount={nGeneradors}
-                        setAmount={setGeneradors}
-                        electricitatActual={electricitatActual}
-                        getCostForItem={getCostForItem}
-                        buyItem={buyItem}
+                {/* Botón para abrir el desplegable */}
+                <TouchableOpacity style={styles.button} onPress={() => handleSnapPress(0)}>
+                    <Image 
+                        source={require('./arrow.png')} 
+                        style={styles.icon} 
                     />
+                </TouchableOpacity>
 
-                    <PurchaseButton
-                        name="Panell Solar"
-                        baseCost={baseCosts["panellSolar"]}
-                        currentAmount={nPanellsSolars}
-                        setAmount={setPanells}
-                        electricitatActual={electricitatActual}
-                        getCostForItem={getCostForItem}
-                        buyItem={buyItem}
-                    />
-                </BottomSheetView>
-            </BottomSheet>
-        </View>
-      </GestureHandlerRootView>
+                {/* Bottom Sheet para las compras */}
+                <BottomSheet ref={sheetRef} snapPoints={snapPoints} enablePanDownToClose={true} onClose={() => setIsOpen(false)}>
+                    <BottomSheetView style={styles.bottomSheetContent}>
+                        <PurchaseButton
+                            name="Roda de Hamster"
+                            description="Genera més electricitat per cada clic."
+                            baseCost={baseCosts["rodaHamster"]}
+                            currentAmount={nRodesDeHamster}
+                            setAmount={setRodesDeHamster}
+                            electricitatActual={electricitatActual}
+                            getCostForItem={getCostForItem}
+                            buyItem={buyItem}
+                        />
+
+                        <PurchaseButton
+                            name="Generador d'Energia"
+                            description="Genera electricitat per segon automàticament."
+                            baseCost={baseCosts["generador"]}
+                            currentAmount={nGeneradors}
+                            setAmount={setGeneradors}
+                            electricitatActual={electricitatActual}
+                            getCostForItem={getCostForItem}
+                            buyItem={buyItem}
+                        />
+
+                        <PurchaseButton
+                            name="Panell Solar"
+                            description="Genera encara més electricitat per segon."
+                            baseCost={baseCosts["panellSolar"]}
+                            currentAmount={nPanellsSolars}
+                            setAmount={setPanells}
+                            electricitatActual={electricitatActual}
+                            getCostForItem={getCostForItem}
+                            buyItem={buyItem}
+                        />
+
+                        <PurchaseButton
+                            name="Central Nuclear"
+                            description="Genera encara més electricitat per clic."
+                            baseCost={baseCosts["centralNuclear"]}
+                            currentAmount={nCentralsNuclears}
+                            setAmount={setCentralsNuclears}
+                            electricitatActual={electricitatActual}
+                            getCostForItem={getCostForItem}
+                            buyItem={buyItem}
+                        />
+                    </BottomSheetView>
+                </BottomSheet>
+            </View>
+        </GestureHandlerRootView>
     );
 }
 
@@ -181,15 +234,15 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     icon: {
-        width: '8%',  // Ícono ocupará el 10% del ancho de la pantalla
-        height: undefined, // Para mantener la proporción
-        aspectRatio: 1,    // Mantener la relación de aspecto cuadrada
-        resizeMode: 'contain', // Asegura que la imagen se ajuste correctamente dentro del contenedor
+        width: '8%',  
+        height: undefined, 
+        aspectRatio: 1,    
+        resizeMode: 'contain', 
     },
     clicker:{
         width: '100%', 
         height: undefined,
-        aspectRatio: 1,  // Mantener proporción de la imagen
+        aspectRatio: 1,  
         resizeMode: 'contain',
     },
 });
